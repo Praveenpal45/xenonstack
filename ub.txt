@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# internsctl - Custom Linux Command
+
+# Section A
+
+# 1. Manual Page
+man_internsctl() {
+  echo "internsctl(1) - Custom Linux Command"
+  echo " "
+  echo "NAME"
+  echo "  internsctl - Perform various operations on the server"
+  echo " "
+  echo "SYNOPSIS"
+  echo "  internsctl [OPTION] COMMAND [ARGS...]"
+  echo " "
+  echo "DESCRIPTION"
+  echo "  Custom Linux command for server operations."
+  echo " "
+  # Add more sections as needed
+}
+
+# 2. --help Option
+help_internsctl() {
+  echo "Usage: internsctl [OPTION] COMMAND [ARGS...]"
+  echo " "
+  echo "Options:"
+  echo "  --help     Display this help message"
+  echo "  --version  Display command version"
+  echo " "
+  echo "Commands:"
+  echo "  cpu getinfo       Get CPU information"
+  echo "  memory getinfo    Get memory information"
+  echo "  user create       Create a new user"
+  echo "  user list         List all regular users"
+  echo "  user list --sudo-only   List users with sudo permissions"
+  echo "  file getinfo      Get information about a file"
+  # Add more commands as needed
+}
+
+# 3. --version Option
+version_internsctl() {
+  echo "internsctl v0.1.0"
+}
+
+# Section B
+
+# Part1 | Level Easy
+
+# Get CPU information
+cpu_getinfo() {
+  lscpu
+}
+
+# Get memory information
+memory_getinfo() {
+  free
+}
+
+# Part2 | Level Intermediate
+
+# Create a new user
+user_create() {
+  username=$1
+  useradd $username
+  passwd $username
+}
+
+# List all regular users
+user_list() {
+  cut -d: -f1 /etc/passwd
+}
+
+# List users with sudo permissions
+user_list_sudo() {
+  grep -Po '^sudo.+:\K.*$' /etc/group | tr ',' '\n'
+}
+
+# Part3 | Advanced Level
+
+# Get information about a file
+file_getinfo() {
+  file=$1
+  size_option=false
+  permissions_option=false
+  owner_option=false
+  last_modified_option=false
+
+  # Parse options
+  while [ "$#" -gt 1 ]; do
+    case $1 in
+      --size | -s) size_option=true ;;
+      --permissions | -p) permissions_option=true ;;
+      --owner | -o) owner_option=true ;;
+      --last-modified | -m) last_modified_option=true ;;
+      *) ;;
+    esac
+    shift
+  done
+
+  # Display file information based on options
+  if [ "$size_option" = true ]; then
+    stat -c "%s" $file
+  elif [ "$permissions_option" = true ]; then
+    stat -c "%A" $file
+  elif [ "$owner_option" = true ]; then
+    stat -c "%U" $file
+  elif [ "$last_modified_option" = true ]; then
+    stat -c "%y" $file
+  else
+    echo "File: $file"
+    stat -c "Access: %A" $file
+    stat -c "Size(B): %s" $file
+    stat -c "Owner: %U" $file
+    stat -c "Modify: %y" $file
+  fi
+}
+
+# Main command execution
+
+case $1 in
+  --help) help_internsctl ;;
+  --version) version_internsctl ;;
+  cpu) cpu_getinfo ;;
+  memory) memory_getinfo ;;
+  user)
+    case $2 in
+      create) user_create $3 ;;
+      list)
+        if [ "$3" = "--sudo-only" ]; then
+          user_list_sudo
+        else
+          user_list
+        fi
+        ;;
+      *) echo "Invalid user command" ;;
+    esac
+    ;;
+  file) file_getinfo "${@:2}" ;;
+  *) echo "Invalid command" ;;
+esac
